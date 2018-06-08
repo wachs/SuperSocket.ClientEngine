@@ -11,7 +11,7 @@ namespace SuperSocket.ClientEngine
     {
         protected string HostName { get; private set; }
 
-        private bool m_InConnecting = false;        
+        private bool m_InConnecting = false;
 
         public TcpClientSession()
             : base()
@@ -56,6 +56,9 @@ namespace SuperSocket.ClientEngine
         protected virtual bool IsIgnorableException(Exception e)
         {
             if (e is System.ObjectDisposedException)
+                return true;
+
+            if (e is System.InvalidOperationException)
                 return true;
 
             if (e is NullReferenceException)
@@ -159,7 +162,7 @@ namespace SuperSocket.ClientEngine
 
                 if (e != null)
                     e.Dispose();
-                
+
                 return;
             }
 
@@ -200,8 +203,13 @@ namespace SuperSocket.ClientEngine
                 return;
             }
 
+#if !NETFX_CORE
             if (e == null)
                 e = new SocketAsyncEventArgs();
+#elif NETFX_CORE
+
+            e = new SocketAsyncEventArgs();
+#endif
 
             e.Completed += SocketEventArgsCompleted;
 
@@ -264,7 +272,7 @@ namespace SuperSocket.ClientEngine
             var ipEndPoint = endPoint as IPEndPoint;
 
             if (ipEndPoint != null && ipEndPoint.Address != null)
-               return ipEndPoint.Address.ToString();
+                return ipEndPoint.Address.ToString();
 
             return string.Empty;
         }
@@ -301,19 +309,19 @@ namespace SuperSocket.ClientEngine
                 client.Shutdown(SocketShutdown.Both);
             }
             catch
-            {}
+            { }
             finally
             {
                 try
                 {
-#if NETFX_CORE                  
+#if NETFX_CORE
                     client.Dispose();
 #else
                     client.Close();
 #endif
                 }
                 catch
-                {}
+                { }
             }
 
             return fireOnClosedEvent;
@@ -395,7 +403,7 @@ namespace SuperSocket.ClientEngine
             for (var i = 0; i < segments.Count; i++)
             {
                 var seg = segments[i];
-                
+
                 if (seg.Count == 0)
                 {
                     throw new Exception("The data piece to be sent cannot be empty.");
